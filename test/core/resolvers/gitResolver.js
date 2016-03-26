@@ -1,9 +1,9 @@
 var expect = require('expect.js');
 var util = require('util');
 var path = require('path');
-var fs = require('graceful-fs');
+var fs = require('../../../lib/util/fs');
 var chmodr = require('chmodr');
-var rimraf = require('rimraf');
+var rimraf = require('../../../lib/util/rimraf');
 var mkdirp = require('mkdirp');
 var Q = require('q');
 var mout = require('mout');
@@ -15,6 +15,7 @@ var defaultConfig = require('../../../lib/config');
 describe('GitResolver', function () {
     var tempDir = path.resolve(__dirname, '../../tmp/tmp');
     var originalrefs = GitResolver.refs;
+    var originalEnv = process.env;
     var logger;
 
     before(function () {
@@ -23,6 +24,7 @@ describe('GitResolver', function () {
 
     afterEach(function () {
         logger.removeAllListeners();
+        process.env = originalEnv;
     });
 
     function clearResolverRuntimeCache() {
@@ -41,6 +43,24 @@ describe('GitResolver', function () {
     describe('misc', function () {
         it.skip('should error out if git is not installed');
         it.skip('should setup git template dir to an empty folder');
+        it('should set process.env.GIT_SSL_NO_VERIFY when strictSSL is false', function () {
+            var resolver;
+            var decEndpoint = { source: 'foo'};
+
+            expect(process.env).to.not.have.property('GIT_SSL_NO_VERIFY');
+
+            resolver = new GitResolver(decEndpoint, defaultConfig(), logger);
+            expect(process.env).to.have.property('GIT_SSL_NO_VERIFY', 'false');
+            delete process.env.GIT_SSL_NO_VERIFY;
+
+            resolver = new GitResolver(decEndpoint, defaultConfig({strictSsl: false}), logger);
+            expect(process.env).to.have.property('GIT_SSL_NO_VERIFY', 'true');
+            delete process.env.GIT_SSL_NO_VERIFY;
+
+            resolver = new GitResolver(decEndpoint, defaultConfig({strictSsl: true}), logger);
+            expect(process.env).to.have.property('GIT_SSL_NO_VERIFY', 'false');
+            delete process.env.GIT_SSL_NO_VERIFY;
+        });
     });
 
     describe('.hasNew', function () {
@@ -706,7 +726,7 @@ describe('GitResolver', function () {
             }, function (err) {
                 expect(err).to.be.an(Error);
                 expect(err.message).to.match(/was able to satisfy ~0.2.0/i);
-                expect(err.details).to.match(/available versions: 0\.1\.1, 0\.1\.0/i);
+                expect(err.details).to.match(/available versions in foo: 0\.1\.1, 0\.1\.0/i);
                 expect(err.code).to.equal('ENORESTARGET');
                 next();
             })
@@ -869,10 +889,8 @@ describe('GitResolver', function () {
             var resolver = create('foo');
             var dst = path.join(tempDir, '.git');
 
-            this.timeout(30000);  // Give some time to copy
-
             // Copy .git folder to the tempDir
-            copy.copyDir(path.resolve(__dirname, '../../../.git'), dst, {
+            copy.copyDir(path.resolve(__dirname, '../../assets/package-a/.git'), dst, {
                 mode: 0777
             })
             .then(function () {

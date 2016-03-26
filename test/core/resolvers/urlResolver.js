@@ -1,9 +1,9 @@
 var expect = require('expect.js');
 var path = require('path');
-var fs = require('graceful-fs');
+var fs = require('../../../lib/util/fs');
 var nock = require('nock');
 var Q = require('q');
-var rimraf = require('rimraf');
+var rimraf = require('../../../lib/util/rimraf');
 var mkdirp = require('mkdirp');
 var Logger = require('bower-logger');
 var cmd = require('../../../lib/util/cmd');
@@ -25,9 +25,6 @@ describe('UrlResolver', function () {
 
     afterEach(function () {
         logger.removeAllListeners();
-
-        // Clean nocks
-        nock.cleanAll();
     });
 
     function create(decEndpoint) {

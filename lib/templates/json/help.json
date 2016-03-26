@@ -34,7 +34,7 @@
         },
         {
             "shorthand":   "-l",
-            "flag":        "--log-level",
+            "flag":        "--loglevel",
             "description": "What level of logs to report"
         },
         {
@@ -62,6 +62,7 @@
             "description": "Allows running commands as root"
         },
         {
+            "shorthand":   "-v",
             "flag":        "--version",
             "description": "Output Bower version"
         },

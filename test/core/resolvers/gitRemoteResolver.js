@@ -1,6 +1,6 @@
 var expect = require('expect.js');
 var path = require('path');
-var fs = require('graceful-fs');
+var fs = require('../../../lib/util/fs');
 var Logger = require('bower-logger');
 var helpers = require('../../helpers');
 var Q = require('q');
@@ -268,7 +268,7 @@ describe('GitRemoteResolver', function () {
             return function (cmd, args, options) {
                 expect(cmd).to.be('git');
                 expect(args).to.eql([ 'ls-remote', '--heads', testSource ]);
-                expect(options.env.GIT_CURL_VERBOSE).to.be(2);
+                expect(options.env.GIT_CURL_VERBOSE).to.be('2');
 
                 return Q.all(['stdout', stderr]);
             };
@@ -285,7 +285,7 @@ describe('GitRemoteResolver', function () {
                 */}))
             );
 
-            var resolver = new MyGitRemoteResolver({ source: testSource }, defaultConfig(), logger);
+            var resolver = new MyGitRemoteResolver({ source: testSource }, defaultConfig({ shallowCloneHosts: ['foo'] }), logger);
 
             resolver._shallowClone().then(function (shallowCloningSupported) {
                 expect(shallowCloningSupported).to.be(false);
@@ -305,7 +305,7 @@ describe('GitRemoteResolver', function () {
                 */}))
             );
 
-            var resolver = new MyGitRemoteResolver({ source: testSource }, defaultConfig(), logger);
+            var resolver = new MyGitRemoteResolver({ source: testSource }, defaultConfig({ shallowCloneHosts: ['foo'] }), logger);
 
             resolver._shallowClone().then(function (shallowCloningSupported) {
                 expect(shallowCloningSupported).to.be(false);
@@ -347,7 +347,7 @@ describe('GitRemoteResolver', function () {
                 */}))
             );
 
-            var resolver = new MyGitRemoteResolver({ source: testSource }, defaultConfig(), logger);
+            var resolver = new MyGitRemoteResolver({ source: testSource }, defaultConfig({ shallowCloneHosts: ['foo'] }), logger);
 
             resolver._shallowClone().then(function (shallowCloningSupported) {
                 expect(shallowCloningSupported).to.be(true);
@@ -368,7 +368,7 @@ describe('GitRemoteResolver', function () {
                     if (counter === 1) {
                         expect(cmd).to.be('git');
                         expect(args).to.eql([ 'ls-remote', '--heads', testSource ]);
-                        expect(options.env.GIT_CURL_VERBOSE).to.be(2);
+                        expect(options.env.GIT_CURL_VERBOSE).to.be('2');
 
                         return Q.all(['stdout', multiline(function () {/*
                          foo: bar
@@ -383,12 +383,12 @@ describe('GitRemoteResolver', function () {
                 }
             );
 
-            var resolver = new MyGitRemoteResolver({ source: testSource }, defaultConfig(), logger);
+            var resolver = new MyGitRemoteResolver({ source: testSource }, defaultConfig({ shallowCloneHosts: ['foo'] }), logger);
 
             resolver._shallowClone().then(function (shallowCloningSupported) {
                 expect(shallowCloningSupported).to.be(true);
 
-                var resolver2 = new MyGitRemoteResolver({ source: testSource }, defaultConfig(), logger);
+                var resolver2 = new MyGitRemoteResolver({ source: testSource }, defaultConfig({ shallowCloneHosts: ['foo'] }), logger);
 
                 resolver2._shallowClone().then(function (shallowCloningSupported) {
                     expect(shallowCloningSupported).to.be(true);
@@ -413,7 +413,7 @@ describe('GitRemoteResolver', function () {
                     if (counter === 1) {
                         expect(cmd).to.be('git');
                         expect(args).to.eql([ 'ls-remote', '--heads', testSource1 ]);
-                        expect(options.env.GIT_CURL_VERBOSE).to.be(2);
+                        expect(options.env.GIT_CURL_VERBOSE).to.be('2');
 
                         return Q.all(['stdout', multiline(function () {/*
                          foo: bar
@@ -428,12 +428,12 @@ describe('GitRemoteResolver', function () {
                 }
             );
 
-            var resolver = new MyGitRemoteResolver({ source: testSource1 }, defaultConfig(), logger);
+            var resolver = new MyGitRemoteResolver({ source: testSource1 }, defaultConfig({ shallowCloneHosts: ['foo'] }), logger);
 
             resolver._shallowClone().then(function (shallowCloningSupported) {
                 expect(shallowCloningSupported).to.be(true);
 
-                var resolver2 = new MyGitRemoteResolver({ source: testSource2 }, defaultConfig(), logger);
+                var resolver2 = new MyGitRemoteResolver({ source: testSource2 }, defaultConfig({ shallowCloneHosts: ['foo'] }), logger);
 
                 resolver2._shallowClone().then(function (shallowCloningSupported) {
                     expect(shallowCloningSupported).to.be(true);
@@ -458,7 +458,7 @@ describe('GitRemoteResolver', function () {
                     if (counter === 1) {
                         expect(cmd).to.be('git');
                         expect(args).to.eql([ 'ls-remote', '--heads', testSource1 ]);
-                        expect(options.env.GIT_CURL_VERBOSE).to.be(2);
+                        expect(options.env.GIT_CURL_VERBOSE).to.be('2');
 
                         return Q.all(['stdout', multiline(function () {/*
                          foo: bar
@@ -470,7 +470,7 @@ describe('GitRemoteResolver', function () {
                     else {
                         expect(cmd).to.be('git');
                         expect(args).to.eql([ 'ls-remote', '--heads', testSource2 ]);
-                        expect(options.env.GIT_CURL_VERBOSE).to.be(2);
+                        expect(options.env.GIT_CURL_VERBOSE).to.be('2');
 
                         return Q.all(['stdout', multiline(function () {/*
                          foo: barbaz
@@ -482,12 +482,12 @@ describe('GitRemoteResolver', function () {
                 }
             );
 
-            var resolver = new MyGitRemoteResolver({ source: testSource1 }, defaultConfig(), logger);
+            var resolver = new MyGitRemoteResolver({ source: testSource1 }, defaultConfig({ shallowCloneHosts: ['foo', 'foo.bar.baz'] }), logger);
 
             resolver._shallowClone().then(function (shallowCloningSupported) {
                 expect(shallowCloningSupported).to.be(true);
 
-                var resolver2 = new MyGitRemoteResolver({ source: testSource2 }, defaultConfig(), logger);
+                var resolver2 = new MyGitRemoteResolver({ source: testSource2 }, defaultConfig({ shallowCloneHosts: ['foo', 'foo.bar.baz'] }), logger);
 
                 resolver2._shallowClone().then(function (shallowCloningSupported) {
                     expect(shallowCloningSupported).to.be(true);

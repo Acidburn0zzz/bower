@@ -1,8 +1,8 @@
 var expect = require('expect.js');
-var fs = require('graceful-fs');
+var fs = require('../../../lib/util/fs');
 var path = require('path');
 var util = require('util');
-var rimraf = require('rimraf');
+var rimraf = require('../../../lib/util/rimraf');
 var mkdirp = require('mkdirp');
 var tmp = require('tmp');
 var Q = require('q');
@@ -511,6 +511,18 @@ describe('Resolver', function () {
             .then(function (dir) {
                 expect(resolver._tempDir).to.be.ok();
                 expect(resolver._tempDir).to.equal(dir);
+                next();
+            })
+            .done();
+        });
+
+        it('should remove @ from directory names', function (next) {
+            var resolver = create('foo@bar');
+
+            resolver._createTempDir()
+            .then(function (dir) {
+                expect(resolver._tempDir).to.be.ok();
+                expect(resolver._tempDir.indexOf('@')).to.equal(-1);
                 next();
             })
             .done();
