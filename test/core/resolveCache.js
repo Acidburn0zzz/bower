@@ -1,15 +1,15 @@
 var path = require('path');
 var mout = require('mout');
-var rimraf = require('rimraf');
-var fs = require('graceful-fs');
+var rimraf = require('../../lib/util/rimraf');
+var fs = require('../../lib/util/fs');
 var Q = require('q');
 var expect = require('expect.js');
 var mkdirp = require('mkdirp');
+var md5 = require('md5-hex');
 var ResolveCache = require('../../lib/core/ResolveCache');
 var defaultConfig = require('../../lib/config');
 var cmd = require('../../lib/util/cmd');
 var copy = require('../../lib/util/copy');
-var md5 = require('../../lib/util/md5');
 
 describe('ResolveCache', function () {
     var resolveCache;
@@ -908,7 +908,6 @@ describe('ResolveCache', function () {
                 expect(entries).to.be.an('array');
 
                 expectedJson = fs.readFileSync(path.join(__dirname, '../assets/resolve-cache/list-json-1.json'));
-                expectedJson = expectedJson.toString().trim();
 
                 mout.object.forOwn(entries, function (entry) {
                     // Trim absolute bower path from json
@@ -917,8 +916,7 @@ describe('ResolveCache', function () {
                     entry.canonicalDir = entry.canonicalDir.replace(/\\/g, '/');
                 });
 
-                json = JSON.stringify(entries, null, '  ');
-                expect(json).to.equal(expectedJson);
+                expect(entries).to.eql(JSON.parse(expectedJson));
 
                 next();
             })
