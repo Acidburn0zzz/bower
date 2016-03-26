@@ -1,19 +1,21 @@
 var expect = require('expect.js');
 var util = require('util');
 var path = require('path');
-var fs = require('graceful-fs');
-var rimraf = require('rimraf');
+var fs = require('../../../lib/util/fs');
+var rimraf = require('../../../lib/util/rimraf');
 var mkdirp = require('mkdirp');
 var Q = require('q');
 var mout = require('mout');
 var Logger = require('bower-logger');
 var SvnResolver = require('../../../lib/core/resolvers/SvnResolver');
 var defaultConfig = require('../../../lib/config');
+var helpers = require('../../helpers');
 
-describe('SvnResolver', function () {
+if (!helpers.hasSvn()) describe.skip('SvnResolver', function() {});
+else describe('SvnResolver', function () {
     var tempDir = path.resolve(__dirname, '../../tmp/tmp');
     var testPackage = path.resolve(__dirname, '../../assets/package-svn/repo');
-    var testPackageAdmin = path.resolve(__dirname, '../../assets/package-svn/admin');
+    // var testPackageAdmin = path.resolve(__dirname, '../../assets/package-svn/admin');
     var originaltags = SvnResolver.tags;
     var logger;
 
@@ -61,7 +63,7 @@ describe('SvnResolver', function () {
         it('should be true when the resolution type is different', function (next) {
             var resolver;
 
-            fs.writeFileSync(path.join(tempDir, '.bower.json'), JSON.stringify({
+            var pkgMeta = {
                 name: 'foo',
                 version: '0.0.0',
                 _resolution: {
@@ -69,7 +71,7 @@ describe('SvnResolver', function () {
                     tag: '0.0.0',
                     commit: 123
                 }
-            }));
+            };
 
             SvnResolver.tags = function () {
                 return Q.resolve({
@@ -84,7 +86,7 @@ describe('SvnResolver', function () {
             };
 
             resolver = create('foo');
-            resolver.hasNew(tempDir)
+            resolver.hasNew(pkgMeta)
             .then(function (hasNew) {
                 expect(hasNew).to.be(true);
                 next();
@@ -95,7 +97,7 @@ describe('SvnResolver', function () {
         it('should be true when a higher version for a range is available', function (next) {
             var resolver;
 
-            fs.writeFileSync(path.join(tempDir, '.bower.json'), JSON.stringify({
+            var pkgMeta = {
                 name: 'foo',
                 version: '1.0.0',
                 _resolution: {
@@ -103,7 +105,7 @@ describe('SvnResolver', function () {
                     tag: '1.0.0',
                     commit: 3
                 }
-            }));
+            };
 
             SvnResolver.tags = function () {
                 return Q.resolve({
@@ -113,7 +115,7 @@ describe('SvnResolver', function () {
             };
 
             resolver = create('foo');
-            resolver.hasNew(tempDir)
+            resolver.hasNew(pkgMeta)
             .then(function (hasNew) {
                 expect(hasNew).to.be(true);
                 next();
@@ -124,7 +126,7 @@ describe('SvnResolver', function () {
         it('should be true when a resolved to a lower version of a range', function (next) {
             var resolver;
 
-            fs.writeFileSync(path.join(tempDir, '.bower.json'), JSON.stringify({
+            var pkgMeta = {
                 name: 'foo',
                 version: '1.0.1',
                 _resolution: {
@@ -132,7 +134,8 @@ describe('SvnResolver', function () {
                     tag: '1.0.1',
                     commit: 3
                 }
-            }));
+            };
+
             SvnResolver.tags = function () {
                 return Q.resolve({
                     '1.0.0': 2
@@ -140,7 +143,7 @@ describe('SvnResolver', function () {
             };
 
             resolver = create('foo');
-            resolver.hasNew(tempDir)
+            resolver.hasNew(pkgMeta)
             .then(function (hasNew) {
                 expect(hasNew).to.be(true);
                 next();
@@ -151,7 +154,7 @@ describe('SvnResolver', function () {
         it('should be false when resolved to the same tag (with same commit hash) for a given range', function (next) {
             var resolver;
 
-            fs.writeFileSync(path.join(tempDir, '.bower.json'), JSON.stringify({
+            var pkgMeta = {
                 name: 'foo',
                 version: '1.0.1',
                 _resolution: {
@@ -159,7 +162,8 @@ describe('SvnResolver', function () {
                     tag: '1.0.1',
                     commit: 2
                 }
-            }));
+            };
+
             SvnResolver.tags = function () {
                 return Q.resolve({
                     '1.0.0': 1,
@@ -168,7 +172,7 @@ describe('SvnResolver', function () {
             };
 
             resolver = create('foo');
-            resolver.hasNew(tempDir)
+            resolver.hasNew(pkgMeta)
             .then(function (hasNew) {
                 expect(hasNew).to.be(false);
                 next();
@@ -179,7 +183,7 @@ describe('SvnResolver', function () {
         it('should be true when resolved to the same tag (with different commit hash) for a given range', function (next) {
             var resolver;
 
-            fs.writeFileSync(path.join(tempDir, '.bower.json'), JSON.stringify({
+            var pkgMeta = {
                 name: 'foo',
                 version: '1.0.1',
                 _resolution: {
@@ -187,7 +191,8 @@ describe('SvnResolver', function () {
                     tag: '1.0.1',
                     commit: 3
                 }
-            }));
+            };
+
             SvnResolver.tags = function () {
                 return Q.resolve({
                     '1.0.0': 2,
@@ -196,7 +201,7 @@ describe('SvnResolver', function () {
             };
 
             resolver = create('foo');
-            resolver.hasNew(tempDir)
+            resolver.hasNew(pkgMeta)
             .then(function (hasNew) {
                 expect(hasNew).to.be(true);
                 next();
@@ -208,13 +213,14 @@ describe('SvnResolver', function () {
         it('should be false when targeting commit hashes', function (next) {
             var resolver;
 
-            fs.writeFileSync(path.join(tempDir, '.bower.json'), JSON.stringify({
+            var pkgMeta = {
                 name: 'foo',
                 _resolution: {
                     type: 'commit',
                     commit: 1
                 }
-            }));
+            };
+
             SvnResolver.tags = function () {
                 return Q.resolve({
                     '1.0.0': 2
@@ -222,7 +228,7 @@ describe('SvnResolver', function () {
             };
 
             resolver = create('foo');
-            resolver.hasNew(tempDir)
+            resolver.hasNew(pkgMeta)
             .then(function (hasNew) {
                 expect(hasNew).to.be(true);
                 next();
@@ -497,7 +503,7 @@ describe('SvnResolver', function () {
             }, function (err) {
                 expect(err).to.be.an(Error);
                 expect(err.message).to.match(/was able to satisfy ~0.2.0/i);
-                expect(err.details).to.match(/available versions: 0\.1\.1, 0\.1\.0/i);
+                expect(err.details).to.match(/available versions in foo: 0\.1\.1, 0\.1\.0/i);
                 expect(err.code).to.equal('ENORESTARGET');
                 next();
             })
@@ -1000,7 +1006,7 @@ describe('SvnResolver', function () {
         it('should guess the name from the path', function () {
             var resolver;
 
-            resolver = create('file://' + testPackage);
+            resolver = create(helpers.localSource(testPackage));
             expect(resolver.getName()).to.equal('repo');
 
             resolver = create('svn+http://yii.googlecode.com/svn');
@@ -1011,7 +1017,7 @@ describe('SvnResolver', function () {
     describe('.resolve', function () {
 
         it('should export correctly if resolution is a tag', function (next) {
-            var resolver = create({ source: 'file://' + testPackageAdmin, target: '0.0.1' });
+            var resolver = create({ source: testPackage, target: '0.0.1' });
 
             resolver.resolve()
             .then(function (dir) {
@@ -1027,7 +1033,7 @@ describe('SvnResolver', function () {
         });
 
         it('should export correctly if resolution is a commit', function (next) {
-            var resolver = create({ source: 'file://' + testPackageAdmin, target: 'r1' });
+            var resolver = create({ source: testPackage, target: 'r1' });
 
             resolver.resolve()
             .then(function (dir) {
